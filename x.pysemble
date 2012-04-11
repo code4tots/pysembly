@@ -1,0 +1,5 @@
+OBJECTS
+int A
+int B
+CONNECTIONS
+A :: 1 -> B :: 2

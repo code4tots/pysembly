@@ -1,2 +1,8 @@
 4.11.2012
 A programming language that assembles Python components.
+
+builder.py
+    Takes a file (*.pysemble) describing the connection between all the components, and builds the desired program.
+    
+gui.py
+    Graphical user interface for creating pysemble files, and using builder.py
