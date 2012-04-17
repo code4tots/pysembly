@@ -1,88 +1,70 @@
 #!/usr/bin/python
 
-# Set up Tkinter and other global variables.
+# Set up Tkinter and other relevant setup for this view.
 from Tkinter import *
 root = Tk()
-canvas = Canvas(root)
-# For now model is just going to be a simple dict.
-model = {	'boxes':[ 	['hello world', (20, 20)],
-						['Reall really long text', (100, 100)],
-						['Another', (200, 200)],
-					],
-			'arrows':[	['hello world', 'Another'],
-					],
-			'ULC':(0,0),
-			'scale':1 ,
-			'selected':None
-}
-view = {	'text': {},
-			'box' : {},
-			'lastpos':None
-}
 
-def draw(model):
-	boxesAndLocations = model['boxes'] # Boxes are all just text.
-	arrows = model['arrows']
-	ULC = model['ULC'] # Upper Left Corner of visible screen.
-	scale = model['scale'] # How the image should be scaled.
-	
-	# Clear the canvas.
-	canvas.delete("all")
+frame = Frame(root)
+frame.pack(fill=BOTH, expand=1)
+
+info = Text(frame) # Info bar
+info.pack(side=RIGHT, fill=BOTH, expand=1)
+info.config(state=DISABLED) # Make info read-only.
+
+canvas = Canvas(frame)
+canvas.pack(side=RIGHT, fill=BOTH, expand=1)
+
+# Methods for getting information from the outside world.
+IO = {} # All io variables will be nested here.
+IO['infoText'] = '' # Text to be displayed by 'info'
+IO['boxes'] = [] # List of boxes that needed to be displayed (only their names are on it).
+IO['arrows'] = [] # List of box name pairs (srcBoxName, destBoxName).
+IO['loc'] = {} # Location of all the 'boxes'; lookup by name.
+IO['selected'] = ''
+
+def setInfoText(infoText):
+	IO['infoText'] = infoText
+	draw()
+	print 'draw was called.'
+	print IO['infoText']
+def newBox(name):
+	IO['boxes'].append(name)
+	draw()
+def newArrow(src,dest):
+	IO['arrows'].append( (src,dest) )
+	draw()
+
+# Draw. This should be called after anything gets updated.
+def draw():
+	# Set the text for info.
+	info.delete(1.0, END)
+	# temporarily enable info to write to it, write to it, then make it read-only again.
+	info.config(state=NORMAL)
+	info.insert(INSERT,IO['infoText'])
+	info.config(state=DISABLED)
 	
 	# Draw the boxes.
-	for text, (x,y) in boxesAndLocations:
-		view['text'][text] = textObj = canvas.create_text(x,y,text=text)
-		view['box'][text] = canvas.bbox(textObj)
-		textBox = canvas.create_rectangle(canvas.bbox(textObj), fill="#%02x%02x%02x" % (0, 255, 0))
-		canvas.tag_lower(textBox, textObj)
-		
-	# Draw the arrows.
-	loc = {}
-	for text, (x,y) in boxesAndLocations:
-		loc[text] = (x,y)
-	for arrow in arrows:
-		canvas.create_line(*(loc[arrow[0]]+loc[arrow[1]]) )
-	
-# Callbacks
-def insideBox( (x,y) , (x1, y1, x2, y2) ):
-	return (x1 < x and x < x2) and (y1 < y and y < y2)
+	for boxName in IO['boxes']:
+		if not (boxName in IO['loc']):
+			IO['loc'][boxName] = ( int(canvas.cget("width")) / 2, int(canvas.cget("height")) / 2 )
+		t = canvas.create_text(IO['loc'][boxName][1],IO['loc'][boxName][1],boxName)
+		b = canvas.create_rectangle(canvas.bbox(t), fill="#%02x%02x%02x" % (0, 255, 0))
+		canvas.tag_lower(b,t)
+
+# Callbacks. Stuff to do when we interact with the program.
 def selectBox(event):
-	# Initialize.
-	model['selected'] = None
-	view['lastpos'] = (event.x, event.y)
-	# Loop through each box and see if the click landed on any of the boxes.
-	# If multiple boxes occupy a spot, pick the one on the top.
-	for box in model['boxes']:
-		text , _ = box
-		if insideBox( (event.x, event.y) , view['box'][text] ):
-			model['selected'] = box
-	# Put the selected box on the top so that it gets drawn on top.
-	for i in range(len(model['boxes'])):
-		if id(model['boxes'][i]) == id(model['selected']):
-			model['boxes'] = model['boxes'][:i] + model['boxes'][i+1:] + [ model['selected'] ]
-			draw(model)
-			break
-		
-def releaseBox(event):
-	model['selected'] = None
-	
-def movingBox(event):
-	if model['selected'] != None:
-		x, y = model['selected'][1]
-		model['selected'][1] = (x + (event.x-view['lastpos'][0]),y + (event.y-view['lastpos'][1]))
-		view['lastpos'] = event.x , event.y
-		draw(model)
-		
-# Bind the callbacks.
-canvas.bind("<B1-Motion>", movingBox)
-canvas.bind("<Button-1>", selectBox)
-canvas.bind("<ButtonRelease-1>", releaseBox)
+	for name in IO['boxes']:
+		IO['loc'][
+
+# Register the callbacks.
+#canvas.bind('<
+
+
+# Some test.
+newBox("Some box.")
+setInfoText('Hello world.')
 
 def run():
-	# Do the first draw
-	draw(model)
-	# Show and run the program.
-	canvas.pack(fill=BOTH, expand=1)
 	mainloop()
 	
 if __name__ == '__main__':
